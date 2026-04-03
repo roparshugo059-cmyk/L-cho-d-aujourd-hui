@@ -3,193 +3,144 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>L'écho d'aujourd'hui</title>
+<title>L'Écho</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
-:root{
---bleu:#0b1f3a;
---rouge:#c8102e;
---gris:#f2f2f2;
-}
-
+:root{--bleu:#0b1f3a;--rouge:#c8102e}
 body{margin:0;font-family:'Merriweather',serif;background:white;color:#111}
-
-header{
-border-bottom:1px solid #ddd;
-padding:15px;text-align:center;
-}
-
-.logo{font-size:34px;font-weight:bold;color:var(--bleu)}
-
-.topbar{
-display:flex;justify-content:center;gap:10px;margin-top:10px;
-}
-
-.topbar input{padding:6px;border:1px solid #ccc}
-
-.nav{
-display:flex;justify-content:center;gap:20px;padding:10px;border-bottom:1px solid #ddd;
-font-family:'Inter',sans-serif;font-size:14px}
-
-.container{max-width:900px;margin:auto;padding:20px}
-
-/* ARTICLE */
-.article{
-margin-bottom:40px;
-border-bottom:1px solid #ddd;
-padding-bottom:20px;
-}
-
-.article h1{
-font-size:28px;
-margin-bottom:10px;
-}
-
-.meta{font-size:12px;color:#666;margin-bottom:15px}
-
-.content{
-font-size:18px;
-line-height:1.8;
-}
-
-.content p{margin-bottom:15px}
-.content h2{font-size:22px;margin-top:20px}
-.content b{font-weight:bold}
-.content i{font-style:italic}
-
-/* EDITOR */
-.editor-btn{
-position:fixed;bottom:20px;right:20px;
-background:var(--rouge);color:white;border:none;
-padding:15px;border-radius:50%;cursor:pointer;font-size:18px}
-
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center}
-
+header{text-align:center;padding:20px;border-bottom:1px solid #ddd}
+.logo{font-size:32px;font-weight:bold;color:var(--bleu)}
+.container{max-width:800px;margin:auto;padding:20px}
+.article{margin-bottom:40px}
+.article img{width:100%;border-radius:10px;margin:15px 0}
+.article h1{font-size:30px}
+.meta{color:#666;font-size:12px;margin-bottom:15px}
+.content{font-size:18px;line-height:1.8}
+.editor-btn{position:fixed;bottom:20px;right:20px;background:var(--rouge);color:white;border:none;padding:15px;border-radius:50%;cursor:pointer;display:none}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center}
 .modal.active{display:flex}
-
-.editor{
-background:white;padding:20px;border-radius:10px;width:90%;max-width:600px}
-
-textarea,input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc}
-
-.toolbar button{margin-right:5px}
-
+.editor{background:white;padding:20px;border-radius:10px;width:90%;max-width:600px}
+input,textarea{width:100%;padding:10px;margin-bottom:10px}
 </style>
 </head>
 
 <body>
-
 <header>
 <div class="logo">L'ÉCHO</div>
-<div class="topbar">
-<input type="password" id="password" placeholder="Admin">
-<button onclick="login()">Connexion</button>
-<button onclick="logout()">Déco</button>
-</div>
 </header>
-
-<div class="nav">
-<span>Actualités</span>
-<span>Politique</span>
-<span>Économie</span>
-<span>Culture</span>
-<span>Sport</span>
-</div>
 
 <div class="container" id="articles"></div>
 
-<button class="editor-btn" onclick="openEditor()">✍️</button>
+<button class="editor-btn" id="editBtn" onclick="openEditor()">✍️</button>
 
 <div class="modal" id="modal">
 <div class="editor">
 <h2>Nouvel article</h2>
 <input id="title" placeholder="Titre">
-
-<div class="toolbar">
-<button onclick="add('\\n\\n')">Paragraphe</button>
-<button onclick="add('**gras**')">Gras</button>
-<button onclick="add('*italique*')">Italique</button>
-<button onclick="add('\\n## Titre\\n')">Sous-titre</button>
-</div>
-
-<textarea id="content" placeholder="Écris ton article..."></textarea>
+<input id="image" placeholder="URL image">
+<textarea id="content" placeholder="Contenu"></textarea>
 <button onclick="saveArticle()">Publier</button>
+<button onclick="closeEditor()">Fermer</button>
 </div>
 </div>
 
 <script>
-const firebaseConfig={apiKey:"YOUR_KEY",authDomain:"YOUR_DOMAIN",projectId:"YOUR_PROJECT"};
-const app=firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore();
+// CONFIG FIREBASE
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT"
+};
 
-const PASSWORD="admin123";
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
 
-function login(){
-if(password.value===PASSWORD){
-localStorage.setItem('admin','true');
-alert('Connecté');
-}}
-
-function logout(){
-localStorage.removeItem('admin');
-}
+// LOGIN SIMPLE (email admin)
+const ADMIN_EMAIL = "admin@email.com";
 
 function openEditor(){
-if(localStorage.getItem('admin')==='true'){
-modal.classList.add('active');
-}else{alert('Connecte-toi');}
+  if(auth.currentUser && auth.currentUser.email === ADMIN_EMAIL){
+    modal.classList.add('active');
+  } else {
+    const email = prompt("Email admin");
+    const password = prompt("Mot de passe");
+
+    auth.signInWithEmailAndPassword(email, password)
+    .then(()=>{
+      editBtn.style.display = 'block';
+      alert("Connecté");
+    })
+    .catch(()=>alert("Erreur login"));
+  }
 }
 
-function add(text){content.value+=text}
+function closeEditor(){
+  modal.classList.remove('active');
+}
 
 function formatText(text){
-let html=text
-.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
-.replace(/\*(.*?)\*/g,'<i>$1</i>')
-.replace(/## (.*?)\n/g,'<h2>$1</h2>');
-
-return html.split('\n\n').map(p=>`<p>${p}</p>`).join('');
+  let html = text
+  .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+  .replace(/\*(.*?)\*/g,'<i>$1</i>')
+  .replace(/## (.*?)\n/g,'<h2>$1</h2>');
+  return html.split('\n\n').map(p=>`<p>${p}</p>`).join('');
 }
 
 async function saveArticle(){
-await db.collection('articles').add({
-title:title.value,
-content:content.value,
-date:new Date().toLocaleString()
-});
-modal.classList.remove('active');
-title.value='';content.value='';
+  if(!auth.currentUser) return;
+
+  await db.collection('articles').add({
+    title: document.getElementById('title').value,
+    content: document.getElementById('content').value,
+    image: document.getElementById('image').value,
+    date: new Date()
+  });
+
+  closeEditor();
 }
 
 function load(){
-db.collection('articles').orderBy('date','desc').onSnapshot(s=>{
-articles.innerHTML='';
+  db.collection('articles').orderBy('date','desc').onSnapshot(s=>{
+    articles.innerHTML='';
 
-s.forEach(doc=>{
-let a=doc.data();
-let div=document.createElement('div');
-div.className='article';
+    if(s.empty){
+      articles.innerHTML = "<p>Aucun article pour le moment.</p>";
+      return;
+    }
 
-div.innerHTML=`
-<h1>${a.title}</h1>
-<div class="meta">${a.date}</div>
-<div class="content">${formatText(a.content)}</div>
-`;
+    s.forEach(doc=>{
+      let a = doc.data();
+      let div = document.createElement('div');
+      div.className='article';
 
-articles.appendChild(div);
-});
-});
+      let date = a.date?.toDate ? a.date.toDate().toLocaleString() : '';
+
+      div.innerHTML=`
+        <h1>${a.title}</h1>
+        <div class="meta">${date}</div>
+        ${a.image ? `<img src="${a.image}">` : ''}
+        <div class="content">${formatText(a.content)}</div>
+      `;
+
+      articles.appendChild(div);
+    });
+  });
 }
 
-window.onload=()=>{
-load();
-}
+auth.onAuthStateChanged(user=>{
+  if(user && user.email === ADMIN_EMAIL){
+    editBtn.style.display = 'block';
+  }
+});
+
+window.onload = load;
 </script>
 
 </body>
