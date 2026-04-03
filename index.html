@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>L'Écho</title>
+<title>L'ÉCHO D'AUJOURD'HUI</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -14,19 +14,25 @@
 <style>
 :root{--bleu:#0b1f3a;--vert:#2e7d32;--fond:#f5f7fa}
 body{margin:0;font-family:'Merriweather',serif;background:var(--fond);color:#111}
-header{text-align:center;padding:20px;border-bottom:1px solid #ddd;background:white;border-radius:0 0 20px 20px}
-.logo{font-size:32px;font-weight:bold;color:var(--bleu)}
+header{text-align:center;padding:20px;background:white;border-radius:0 0 20px 20px}
+.logo{font-size:34px;font-weight:bold;color:var(--bleu)}
 
-.nav{display:flex;justify-content:center;gap:20px;padding:10px;background:white;border-bottom:1px solid #ddd}
-.nav a{color:var(--bleu);text-decoration:none;font-weight:500}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:white}
+.topbar input{padding:8px;border-radius:10px;border:1px solid #ccc;width:200px}
+.topbar button{padding:8px 12px;border:none;border-radius:10px;background:var(--bleu);color:white;cursor:pointer}
+
+.nav{display:flex;justify-content:center;gap:25px;padding:10px;background:white;border-bottom:1px solid #ddd}
+.nav a{color:var(--bleu);text-decoration:none;font-weight:600;cursor:pointer}
 .nav a:hover{color:var(--vert)}
+
 .container{max-width:800px;margin:auto;padding:20px}
 .article{margin-bottom:40px;background:white;padding:20px;border-radius:20px;box-shadow:0 5px 15px rgba(0,0,0,0.05)}
 .article img{width:100%;border-radius:15px;margin:15px 0}
-.article h1{font-size:30px}
 .meta{color:#666;font-size:12px;margin-bottom:15px}
 .content{font-size:18px;line-height:1.8}
-.editor-btn{position:fixed;bottom:20px;right:20px;background:var(--bleu);color:white;border:none;padding:15px;border-radius:50%;cursor:pointer;display:none !important}
+
+.editor-btn{position:fixed;bottom:20px;right:20px;background:var(--bleu);color:white;border:none;padding:15px;border-radius:50%;cursor:pointer;display:none}
+
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center}
 .modal.active{display:flex}
 .editor{background:white;padding:20px;border-radius:20px;width:90%;max-width:600px}
@@ -39,6 +45,22 @@ input,textarea{width:100%;padding:12px;margin-bottom:10px;border-radius:10px;bor
 <div class="logo">L'ÉCHO D'AUJOURD'HUI</div>
 </header>
 
+<div class="topbar">
+<input type="text" id="search" placeholder="Rechercher..." oninput="searchArticles()">
+<div>
+<button onclick="login()">Connexion</button>
+<button onclick="logout()">Déconnexion</button>
+</div>
+</div>
+
+<div class="nav">
+<a onclick="filter('all')">Actualités</a>
+<a onclick="filter('politique')">Politique</a>
+<a onclick="filter('eco')">Économie</a>
+<a onclick="filter('culture')">Culture</a>
+<a onclick="filter('sport')">Sport</a>
+</div>
+
 <div class="container" id="articles"></div>
 
 <button class="editor-btn" id="editBtn" onclick="openEditor()">✍️</button>
@@ -48,6 +70,7 @@ input,textarea{width:100%;padding:12px;margin-bottom:10px;border-radius:10px;bor
 <h2>Nouvel article</h2>
 <input id="title" placeholder="Titre">
 <input id="image" placeholder="URL image">
+<input id="category" placeholder="Catégorie (politique, eco...)">
 <textarea id="content" placeholder="Contenu"></textarea>
 <button onclick="saveArticle()">Publier</button>
 <button onclick="closeEditor()">Fermer</button>
@@ -55,99 +78,90 @@ input,textarea{width:100%;padding:12px;margin-bottom:10px;border-radius:10px;bor
 </div>
 
 <script>
-// CONFIG FIREBASE
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_PROJECT"
-};
-
+const firebaseConfig = {apiKey:"YOUR_KEY",authDomain:"YOUR_DOMAIN",projectId:"YOUR_PROJECT"};
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// LOGIN SIMPLE (email admin)
-const ADMIN_EMAIL = "admin@email.com";
+let allArticles = [];
+let currentFilter = 'all';
 
-function openEditor(){
-  if(auth.currentUser && auth.currentUser.email === ADMIN_EMAIL){
-    modal.classList.add('active');
-  }
-} else {
-    const email = prompt("Email admin");
-    const password = prompt("Mot de passe");
-
-    auth.signInWithEmailAndPassword(email, password)
-    .then(()=>{
-      editBtn.style.display = 'block';
-      alert("Connecté");
-    })
-    .catch(()=>alert("Erreur login"));
-  }
+function login(){
+const email = prompt("Email");
+const password = prompt("Mot de passe");
+auth.signInWithEmailAndPassword(email,password)
+.then(()=>alert("Connecté"))
+.catch(()=>alert("Erreur"));
 }
 
-function closeEditor(){
-  modal.classList.remove('active');
-}
+function logout(){auth.signOut();}
+
+function openEditor(){if(auth.currentUser){modal.classList.add('active');}}
+function closeEditor(){modal.classList.remove('active');}
 
 function formatText(text){
-  let html = text
-  .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
-  .replace(/\*(.*?)\*/g,'<i>$1</i>')
-  .replace(/## (.*?)\n/g,'<h2>$1</h2>');
-  return html.split('\n\n').map(p=>`<p>${p}</p>`).join('');
+let html=text
+.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+.replace(/\*(.*?)\*/g,'<i>$1</i>')
+.replace(/## (.*?)\n/g,'<h2>$1</h2>');
+return html.split('\n\n').map(p=>`<p>${p}</p>`).join('');
 }
 
 async function saveArticle(){
-  if(!auth.currentUser) return;
+await db.collection('articles').add({
+title:title.value,
+content:content.value,
+image:image.value,
+category:category.value.toLowerCase(),
+date:new Date()
+});
+closeEditor();
+}
 
-  await db.collection('articles').add({
-    title: document.getElementById('title').value,
-    content: document.getElementById('content').value,
-    image: document.getElementById('image').value,
-    date: new Date()
-  });
+function display(list){
+articles.innerHTML='';
+if(list.length===0){articles.innerHTML='<p>Aucun article</p>';return;}
 
-  closeEditor();
+list.forEach(a=>{
+let div=document.createElement('div');
+div.className='article';
+let date=a.date?.toDate ? a.date.toDate().toLocaleString() : '';
+
+div.innerHTML=`
+<h1>${a.title}</h1>
+<div class="meta">${date}</div>
+${a.image ? `<img src="${a.image}">` : ''}
+<div class="content">${formatText(a.content)}</div>`;
+
+articles.appendChild(div);
+});
+}
+
+function filter(cat){
+currentFilter=cat;
+if(cat==='all') display(allArticles);
+else display(allArticles.filter(a=>a.category===cat));
+}
+
+function searchArticles(){
+let q=search.value.toLowerCase();
+let filtered=allArticles.filter(a=>a.title.toLowerCase().includes(q));
+display(filtered);
 }
 
 function load(){
-  db.collection('articles').orderBy('date','desc').onSnapshot(s=>{
-    articles.innerHTML='';
-
-    if(s.empty){
-      articles.innerHTML = "<p>Aucun article pour le moment.</p>";
-      return;
-    }
-
-    s.forEach(doc=>{
-      let a = doc.data();
-      let div = document.createElement('div');
-      div.className='article';
-
-      let date = a.date?.toDate ? a.date.toDate().toLocaleString() : '';
-
-      div.innerHTML=`
-        <h1>${a.title}</h1>
-        <div class="meta">${date}</div>
-        ${a.image ? `<img src="${a.image}">` : ''}
-        <div class="content">${formatText(a.content)}</div>
-      `;
-
-      articles.appendChild(div);
-    });
-  });
+db.collection('articles').orderBy('date','desc').onSnapshot(s=>{
+allArticles=[];
+s.forEach(doc=>allArticles.push(doc.data()));
+display(allArticles);
+});
 }
 
 auth.onAuthStateChanged(user=>{
-  if(user && user.email === ADMIN_EMAIL){
-    editBtn.style.display = 'block';
-  } else {
-    editBtn.style.display = 'none';
-  }
+editBtn.style.display = user ? 'block' : 'none';
 });
 
-window.onload = load;
+window.onload=load;
 </script>
 
 </body>
