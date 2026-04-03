@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -7,10 +6,6 @@
 <title>L'ÉCHO D'AUJOURD'HUI</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
 :root{--bleu:#0b1f3a;--vert:#2e7d32;--fond:#f5f7fa}
@@ -79,141 +74,122 @@ input,textarea{width:100%;padding:10px;margin-bottom:10px;border-radius:10px;bor
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyA3A7zebX0HSQEpKTYOXNGBid1SiaRiBEI",
-  authDomain: "echo-aujourdhui.firebaseapp.com",
-  projectId: "echo-aujourdhui",
-  storageBucket: "echo-aujourdhui.firebasestorage.app",
-  messagingSenderId: "806817807595",
-  appId: "1:806817807595:web:7a678d6bec26c718ba92ae",
-  measurementId: "G-CLSH7LPH1F"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-
 const ADMIN_EMAIL = "hugoropars05@outlook.fr";
+const ADMIN_PASSWORD = "Balance2012";
 
 const modal = document.getElementById('modal');
 const articlesDiv = document.getElementById('articles');
 const editBtn = document.getElementById('editBtn');
 
 let allArticles = [];
+let isLoggedIn = false;
 
 function login(){
-const email = prompt("Email");
-const password = prompt("Mot de passe");
+    const email = prompt("Email");
+    const password = prompt("Mot de passe");
 
-auth.signInWithEmailAndPassword(email,password)
-.then(()=>alert("Connecté"))
-.catch(()=>alert("Erreur de connexion"));
+    if(email === ADMIN_EMAIL && password === ADMIN_PASSWORD){
+        alert("Connecté");
+        isLoggedIn = true;
+        editBtn.style.display = 'block';
+    } else {
+        alert("Email ou mot de passe incorrect");
+        isLoggedIn = false;
+        editBtn.style.display = 'none';
+    }
 }
 
 function logout(){
-auth.signOut();
+    isLoggedIn = false;
+    editBtn.style.display = 'none';
+    alert("Déconnecté");
 }
 
 function openEditor(){
-if(auth.currentUser && auth.currentUser.email === ADMIN_EMAIL){
-modal.classList.add('active');
-}
+    if(isLoggedIn){
+        modal.classList.add('active');
+    } else {
+        alert("Non autorisé");
+    }
 }
 
 function closeEditor(){
-modal.classList.remove('active');
+    modal.classList.remove('active');
 }
 
 function escapeHTML(text){
-return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
 function formatText(text){
-text = escapeHTML(text);
-return text.replace(/\n/g,'<br>');
+    text = escapeHTML(text);
+    return text.replace(/\n/g,'<br>');
 }
 
-async function saveArticle(){
-if(!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL){
-alert("Non autorisé");
-return;
-}
+function saveArticle(){
+    if(!isLoggedIn){
+        alert("Non autorisé");
+        return;
+    }
 
-await db.collection('articles').add({
-title: document.getElementById('title').value,
-content: document.getElementById('content').value,
-image: document.getElementById('image').value,
-category: document.getElementById('category').value.toLowerCase(),
-date: new Date()
-});
+    const newArticle = {
+        title: document.getElementById('title').value,
+        content: document.getElementById('content').value,
+        image: document.getElementById('image').value,
+        category: document.getElementById('category').value.toLowerCase(),
+        date: new Date()
+    };
 
-closeEditor();
+    allArticles.unshift(newArticle); // ajoute en tête
+    closeEditor();
+    display(allArticles);
 }
 
 function display(list){
-articlesDiv.innerHTML='';
+    articlesDiv.innerHTML='';
 
-if(list.length === 0){
-articlesDiv.innerHTML = "<p>Aucun article</p>";
-return;
-}
+    if(list.length === 0){
+        articlesDiv.innerHTML = "<p>Aucun article</p>";
+        return;
+    }
 
-list.forEach(a=>{
-let div=document.createElement('div');
-div.className='article';
+    list.forEach(a=>{
+        let div=document.createElement('div');
+        div.className='article';
 
-let date = a.date?.toDate ? a.date.toDate().toLocaleString() : '';
+        let date = a.date ? a.date.toLocaleString() : '';
 
-div.innerHTML = `
-<h2>${a.title}</h2>
-<div class="meta">${date}</div>
-${a.image ? `<img src="${a.image}">` : ''}
-<div class="content">${formatText(a.content)}</div>
-`;
+        div.innerHTML = `
+            <h2>${a.title}</h2>
+            <div class="meta">${date}</div>
+            ${a.image ? `<img src="${a.image}">` : ''}
+            <div class="content">${formatText(a.content)}</div>
+        `;
 
-articlesDiv.appendChild(div);
-});
+        articlesDiv.appendChild(div);
+    });
 }
 
 function filter(cat){
-if(cat === 'all') display(allArticles);
-else display(allArticles.filter(a=>a.category === cat));
+    if(cat === 'all') display(allArticles);
+    else display(allArticles.filter(a=>a.category === cat));
 }
 
 function searchArticles(){
-let q = document.getElementById('search').value.toLowerCase();
+    let q = document.getElementById('search').value.toLowerCase();
 
-let filtered = allArticles.filter(a =>
-a.title.toLowerCase().includes(q) ||
-a.content.toLowerCase().includes(q)
-);
+    let filtered = allArticles.filter(a =>
+        a.title.toLowerCase().includes(q) ||
+        a.content.toLowerCase().includes(q)
+    );
 
-display(filtered);
+    display(filtered);
 }
 
-function load(){
-db.collection('articles').orderBy('date','desc')
-.onSnapshot(snapshot=>{
-allArticles = [];
-snapshot.forEach(doc=>{
-allArticles.push({id: doc.id, ...doc.data()});
-});
-display(allArticles);
-});
-}
-
-auth.onAuthStateChanged(user=>{
-if(user && user.email === ADMIN_EMAIL){
-editBtn.style.display = 'block';
-}else{
-editBtn.style.display = 'none';
-}
-});
-
-window.onload = load;
+window.onload = function(){
+    display(allArticles);
+};
 </script>
 
 </body>
 </html>
-```
-
