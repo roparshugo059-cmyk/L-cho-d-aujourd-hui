@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>L'écho d'aujourd'hui</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
@@ -14,97 +14,72 @@
 :root{
 --bleu:#0b1f3a;
 --rouge:#c8102e;
---fond:#ffffff;
 --gris:#f2f2f2;
 }
 
-body{margin:0;font-family:'Merriweather',serif;background:var(--fond);color:#111}
+body{margin:0;font-family:'Merriweather',serif;background:white;color:#111}
 
-/* HEADER STYLE FIGARO */
 header{
 border-bottom:1px solid #ddd;
-padding:10px 0;
-text-align:center;
+padding:15px;text-align:center;
 }
 
-.logo{
-font-size:36px;
-font-weight:bold;
-letter-spacing:2px;
-color:var(--bleu);
+.logo{font-size:34px;font-weight:bold;color:var(--bleu)}
+
+.topbar{
+display:flex;justify-content:center;gap:10px;margin-top:10px;
 }
+
+.topbar input{padding:6px;border:1px solid #ccc}
 
 .nav{
-display:flex;justify-content:center;gap:20px;
-padding:10px;border-bottom:1px solid #ddd;
-font-family:'Inter',sans-serif;
-font-size:14px;
-}
+display:flex;justify-content:center;gap:20px;padding:10px;border-bottom:1px solid #ddd;
+font-family:'Inter',sans-serif;font-size:14px}
 
-.nav span{cursor:pointer}
+.container{max-width:900px;margin:auto;padding:20px}
 
-.container{
-max-width:1100px;margin:auto;padding:20px;
-}
-
-/* UNE */
-.une{
-display:grid;
-grid-template-columns:2fr 1fr;
-gap:20px;
-margin-bottom:30px;
-}
-
-.main-article img{
-width:100%;height:350px;object-fit:cover;
-}
-
-.main-article h1{
-font-size:32px;margin:10px 0;
-}
-
-.side-article{
-border-top:1px solid #ddd;padding-top:10px;
-}
-
-.side-article h3{
-font-size:16px;margin:5px 0;
-}
-
-/* LISTE */
-.article-list{
-border-top:2px solid var(--bleu);
-padding-top:20px;
-}
-
+/* ARTICLE */
 .article{
-padding:15px 0;border-bottom:1px solid #ddd;
+margin-bottom:40px;
+border-bottom:1px solid #ddd;
+padding-bottom:20px;
 }
 
-.article h2{font-size:20px;margin:0 0 5px}
+.article h1{
+font-size:28px;
+margin-bottom:10px;
+}
 
-.meta{font-size:12px;color:#666}
+.meta{font-size:12px;color:#666;margin-bottom:15px}
+
+.content{
+font-size:18px;
+line-height:1.8;
+}
+
+.content p{margin-bottom:15px}
+.content h2{font-size:22px;margin-top:20px}
+.content b{font-weight:bold}
+.content i{font-style:italic}
 
 /* EDITOR */
 .editor-btn{
 position:fixed;bottom:20px;right:20px;
 background:var(--rouge);color:white;border:none;
-padding:15px;border-radius:50%;font-size:20px;
-cursor:pointer;
-}
+padding:15px;border-radius:50%;cursor:pointer;font-size:18px}
 
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center}
+background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center}
 
 .modal.active{display:flex}
 
-.editor{background:white;padding:25px;border-radius:10px;width:90%;max-width:600px}
+.editor{
+background:white;padding:20px;border-radius:10px;width:90%;max-width:600px}
 
-input,textarea{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc}
+textarea,input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc}
 
-@media(max-width:800px){
-.une{grid-template-columns:1fr}
-}
+.toolbar button{margin-right:5px}
+
 </style>
 </head>
 
@@ -112,6 +87,11 @@ input,textarea{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc}
 
 <header>
 <div class="logo">L'ÉCHO</div>
+<div class="topbar">
+<input type="password" id="password" placeholder="Admin">
+<button onclick="login()">Connexion</button>
+<button onclick="logout()">Déco</button>
+</div>
 </header>
 
 <div class="nav">
@@ -122,10 +102,7 @@ input,textarea{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc}
 <span>Sport</span>
 </div>
 
-<div class="container">
-<div class="une" id="une"></div>
-<div class="article-list" id="articles"></div>
-</div>
+<div class="container" id="articles"></div>
 
 <button class="editor-btn" onclick="openEditor()">✍️</button>
 
@@ -133,7 +110,15 @@ input,textarea{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc}
 <div class="editor">
 <h2>Nouvel article</h2>
 <input id="title" placeholder="Titre">
-<textarea id="content"></textarea>
+
+<div class="toolbar">
+<button onclick="add('\\n\\n')">Paragraphe</button>
+<button onclick="add('**gras**')">Gras</button>
+<button onclick="add('*italique*')">Italique</button>
+<button onclick="add('\\n## Titre\\n')">Sous-titre</button>
+</div>
+
+<textarea id="content" placeholder="Écris ton article..."></textarea>
 <button onclick="saveArticle()">Publier</button>
 </div>
 </div>
@@ -143,41 +128,68 @@ const firebaseConfig={apiKey:"YOUR_KEY",authDomain:"YOUR_DOMAIN",projectId:"YOUR
 const app=firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
-function openEditor(){modal.classList.add('active')}
+const PASSWORD="admin123";
+
+function login(){
+if(password.value===PASSWORD){
+localStorage.setItem('admin','true');
+alert('Connecté');
+}}
+
+function logout(){
+localStorage.removeItem('admin');
+}
+
+function openEditor(){
+if(localStorage.getItem('admin')==='true'){
+modal.classList.add('active');
+}else{alert('Connecte-toi');}
+}
+
+function add(text){content.value+=text}
+
+function formatText(text){
+let html=text
+.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+.replace(/\*(.*?)\*/g,'<i>$1</i>')
+.replace(/## (.*?)\n/g,'<h2>$1</h2>');
+
+return html.split('\n\n').map(p=>`<p>${p}</p>`).join('');
+}
 
 async function saveArticle(){
-await db.collection('articles').add({title:title.value,content:content.value,date:new Date().toLocaleString()});
-modal.classList.remove('active');title.value='';content.value='';}
+await db.collection('articles').add({
+title:title.value,
+content:content.value,
+date:new Date().toLocaleString()
+});
+modal.classList.remove('active');
+title.value='';content.value='';
+}
 
 function load(){
-let first=true;
 db.collection('articles').orderBy('date','desc').onSnapshot(s=>{
-une.innerHTML='';articles.innerHTML='';
-let sideHTML='';
+articles.innerHTML='';
 
-s.forEach((doc,i)=>{
+s.forEach(doc=>{
 let a=doc.data();
+let div=document.createElement('div');
+div.className='article';
 
-if(i===0){
-une.innerHTML=`
-<div class="main-article">
-<img src="https://picsum.photos/800/400">
+div.innerHTML=`
 <h1>${a.title}</h1>
-<p>${a.content}</p>
-</div>
-<div>${sideHTML}</div>`;
-}else if(i<4){
-sideHTML+=`<div class="side-article"><h3>${a.title}</h3></div>`;
-}else{
-let el=document.createElement('div');
-el.className='article';
-el.innerHTML=`<h2>${a.title}</h2><div class="meta">${a.date}</div>`;
-articles.appendChild(el);
-}
-});
-});}
+<div class="meta">${a.date}</div>
+<div class="content">${formatText(a.content)}</div>
+`;
 
-window.onload=load;
+articles.appendChild(div);
+});
+});
+}
+
+window.onload=()=>{
+load();
+}
 </script>
 
 </body>
