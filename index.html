@@ -12,27 +12,31 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
-:root{--bleu:#0b1f3a;--rouge:#c8102e}
-body{margin:0;font-family:'Merriweather',serif;background:white;color:#111}
-header{text-align:center;padding:20px;border-bottom:1px solid #ddd}
+:root{--bleu:#0b1f3a;--vert:#2e7d32;--fond:#f5f7fa}
+body{margin:0;font-family:'Merriweather',serif;background:var(--fond);color:#111}
+header{text-align:center;padding:20px;border-bottom:1px solid #ddd;background:white;border-radius:0 0 20px 20px}
 .logo{font-size:32px;font-weight:bold;color:var(--bleu)}
+
+.nav{display:flex;justify-content:center;gap:20px;padding:10px;background:white;border-bottom:1px solid #ddd}
+.nav a{color:var(--bleu);text-decoration:none;font-weight:500}
+.nav a:hover{color:var(--vert)}
 .container{max-width:800px;margin:auto;padding:20px}
-.article{margin-bottom:40px}
-.article img{width:100%;border-radius:10px;margin:15px 0}
+.article{margin-bottom:40px;background:white;padding:20px;border-radius:20px;box-shadow:0 5px 15px rgba(0,0,0,0.05)}
+.article img{width:100%;border-radius:15px;margin:15px 0}
 .article h1{font-size:30px}
 .meta{color:#666;font-size:12px;margin-bottom:15px}
 .content{font-size:18px;line-height:1.8}
-.editor-btn{position:fixed;bottom:20px;right:20px;background:var(--rouge);color:white;border:none;padding:15px;border-radius:50%;cursor:pointer;display:none}
+.editor-btn{position:fixed;bottom:20px;right:20px;background:var(--bleu);color:white;border:none;padding:15px;border-radius:50%;cursor:pointer;display:none !important}
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center}
 .modal.active{display:flex}
-.editor{background:white;padding:20px;border-radius:10px;width:90%;max-width:600px}
-input,textarea{width:100%;padding:10px;margin-bottom:10px}
+.editor{background:white;padding:20px;border-radius:20px;width:90%;max-width:600px}
+input,textarea{width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:1px solid #ccc}
 </style>
 </head>
 
 <body>
 <header>
-<div class="logo">L'ÉCHO</div>
+<div class="logo">L'ÉCHO D'AUJOURD'HUI</div>
 </header>
 
 <div class="container" id="articles"></div>
@@ -68,7 +72,8 @@ const ADMIN_EMAIL = "admin@email.com";
 function openEditor(){
   if(auth.currentUser && auth.currentUser.email === ADMIN_EMAIL){
     modal.classList.add('active');
-  } else {
+  }
+} else {
     const email = prompt("Email admin");
     const password = prompt("Mot de passe");
 
@@ -137,6 +142,8 @@ function load(){
 auth.onAuthStateChanged(user=>{
   if(user && user.email === ADMIN_EMAIL){
     editBtn.style.display = 'block';
+  } else {
+    editBtn.style.display = 'none';
   }
 });
 
