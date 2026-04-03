@@ -5,227 +5,179 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>L'écho d'aujourd'hui</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
 <style>
-:root {
-    --bleu: #0b1f3a;
-    --vert: #2e8b57;
-    --fond: #eef2f3;
+:root{
+--bleu:#0b1f3a;
+--rouge:#c8102e;
+--fond:#ffffff;
+--gris:#f2f2f2;
 }
 
-body {
-    margin: 0;
-    font-family: Georgia, serif;
-    background: var(--fond);
+body{margin:0;font-family:'Merriweather',serif;background:var(--fond);color:#111}
+
+/* HEADER STYLE FIGARO */
+header{
+border-bottom:1px solid #ddd;
+padding:10px 0;
+text-align:center;
 }
 
-/* HEADER */
-header {
-    background: var(--bleu);
-    color: white;
-    text-align: center;
-    padding: 20px;
-    font-size: 26px;
+.logo{
+font-size:36px;
+font-weight:bold;
+letter-spacing:2px;
+color:var(--bleu);
 }
 
-/* LOGIN */
-.login-box {
-    position: fixed;
-    top: 15px;
-    right: 15px;
+.nav{
+display:flex;justify-content:center;gap:20px;
+padding:10px;border-bottom:1px solid #ddd;
+font-family:'Inter',sans-serif;
+font-size:14px;
 }
 
-.login-box input {
-    padding: 8px;
-    border-radius: 8px;
-    border: none;
+.nav span{cursor:pointer}
+
+.container{
+max-width:1100px;margin:auto;padding:20px;
 }
 
-.login-box button {
-    padding: 8px;
-    border: none;
-    border-radius: 8px;
-    background: var(--vert);
-    color: white;
-    cursor: pointer;
+/* UNE */
+.une{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:20px;
+margin-bottom:30px;
 }
 
-/* LAYOUT */
-.container {
-    display: flex;
-    gap: 20px;
-    padding: 20px;
+.main-article img{
+width:100%;height:350px;object-fit:cover;
 }
+
+.main-article h1{
+font-size:32px;margin:10px 0;
+}
+
+.side-article{
+border-top:1px solid #ddd;padding-top:10px;
+}
+
+.side-article h3{
+font-size:16px;margin:5px 0;
+}
+
+/* LISTE */
+.article-list{
+border-top:2px solid var(--bleu);
+padding-top:20px;
+}
+
+.article{
+padding:15px 0;border-bottom:1px solid #ddd;
+}
+
+.article h2{font-size:20px;margin:0 0 5px}
+
+.meta{font-size:12px;color:#666}
 
 /* EDITOR */
-.editor {
-    flex: 1;
-    background: white;
-    padding: 20px;
-    border-radius: 20px;
-    display: none;
+.editor-btn{
+position:fixed;bottom:20px;right:20px;
+background:var(--rouge);color:white;border:none;
+padding:15px;border-radius:50%;font-size:20px;
+cursor:pointer;
 }
 
-.editor.active {
-    display: block;
-}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center}
 
-.editor input, .editor textarea {
-    width: 100%;
-    margin-bottom: 15px;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-}
+.modal.active{display:flex}
 
-/* BUTTON */
-.publish {
-    width: 100%;
-    padding: 12px;
-    background: var(--vert);
-    color: white;
-    border: none;
-    border-radius: 10px;
-}
+.editor{background:white;padding:25px;border-radius:10px;width:90%;max-width:600px}
 
-/* JOURNAL */
-.journal {
-    flex: 2;
-}
+input,textarea{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc}
 
-.article {
-    background: white;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 20px;
-    border-left: 5px solid var(--bleu);
-}
-
-.article h2 {
-    color: var(--bleu);
-}
-
-.date {
-    color: var(--vert);
-    font-size: 12px;
-}
-
-/* RESPONSIVE */
-@media (max-width: 800px) {
-    .container {
-        flex-direction: column;
-    }
+@media(max-width:800px){
+.une{grid-template-columns:1fr}
 }
 </style>
-
 </head>
 
 <body>
 
-<header>📰 L'écho d'aujourd'hui</header>
+<header>
+<div class="logo">L'ÉCHO</div>
+</header>
 
-<div class="login-box">
-    <input type="password" id="password" placeholder="Mot de passe">
-    <button onclick="login()">Connexion</button>
-    <button onclick="logout()">Déco</button>
+<div class="nav">
+<span>Actualités</span>
+<span>Politique</span>
+<span>Économie</span>
+<span>Culture</span>
+<span>Sport</span>
 </div>
 
 <div class="container">
+<div class="une" id="une"></div>
+<div class="article-list" id="articles"></div>
+</div>
 
-    <div class="editor" id="editor">
-        <h2>✍️ Nouvel article</h2>
-        <input type="text" id="title" placeholder="Titre">
-        <textarea id="content" rows="8" placeholder="Ton article..."></textarea>
-        <button class="publish" onclick="publishArticle()">Publier</button>
-    </div>
+<button class="editor-btn" onclick="openEditor()">✍️</button>
 
-    <div class="journal" id="journal">
-        <h2>Articles</h2>
-    </div>
-
+<div class="modal" id="modal">
+<div class="editor">
+<h2>Nouvel article</h2>
+<input id="title" placeholder="Titre">
+<textarea id="content"></textarea>
+<button onclick="saveArticle()">Publier</button>
+</div>
 </div>
 
 <script>
-const ADMIN_PASSWORD = "Balance2012";
+const firebaseConfig={apiKey:"YOUR_KEY",authDomain:"YOUR_DOMAIN",projectId:"YOUR_PROJECT"};
+const app=firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
 
-/* LOGIN */
-function login() {
-    const pwd = document.getElementById("password").value;
+function openEditor(){modal.classList.add('active')}
 
-    if (pwd === ADMIN_PASSWORD) {
-        localStorage.setItem("admin", "true");
-        document.getElementById("editor").classList.add("active");
-        alert("Connexion réussie");
-    } else {
-        alert("Mot de passe incorrect");
-    }
+async function saveArticle(){
+await db.collection('articles').add({title:title.value,content:content.value,date:new Date().toLocaleString()});
+modal.classList.remove('active');title.value='';content.value='';}
+
+function load(){
+let first=true;
+db.collection('articles').orderBy('date','desc').onSnapshot(s=>{
+une.innerHTML='';articles.innerHTML='';
+let sideHTML='';
+
+s.forEach((doc,i)=>{
+let a=doc.data();
+
+if(i===0){
+une.innerHTML=`
+<div class="main-article">
+<img src="https://picsum.photos/800/400">
+<h1>${a.title}</h1>
+<p>${a.content}</p>
+</div>
+<div>${sideHTML}</div>`;
+}else if(i<4){
+sideHTML+=`<div class="side-article"><h3>${a.title}</h3></div>`;
+}else{
+let el=document.createElement('div');
+el.className='article';
+el.innerHTML=`<h2>${a.title}</h2><div class="meta">${a.date}</div>`;
+articles.appendChild(el);
 }
+});
+});}
 
-function logout() {
-    localStorage.removeItem("admin");
-    document.getElementById("editor").classList.remove("active");
-}
-
-/* CHECK LOGIN */
-function checkLogin() {
-    if (localStorage.getItem("admin") === "true") {
-        document.getElementById("editor").classList.add("active");
-    }
-}
-
-/* LOAD ARTICLES */
-function loadArticles() {
-    const journal = document.getElementById("journal");
-    const articles = JSON.parse(localStorage.getItem("articles")) || [];
-
-    journal.innerHTML = "<h2>Articles</h2>";
-
-    articles.forEach(a => {
-        const div = document.createElement("div");
-        div.className = "article";
-
-        div.innerHTML = `
-            <div class="date">${a.date}</div>
-            <h2>${a.title}</h2>
-            <p>${a.content}</p>
-        `;
-
-        journal.appendChild(div);
-    });
-}
-
-/* PUBLISH */
-function publishArticle() {
-    if (localStorage.getItem("admin") !== "true") {
-        alert("Accès refusé");
-        return;
-    }
-
-    const title = document.getElementById("title").value;
-    const content = document.getElementById("content").value;
-
-    if (!title || !content) {
-        alert("Champs manquants");
-        return;
-    }
-
-    const articles = JSON.parse(localStorage.getItem("articles")) || [];
-
-    articles.unshift({
-        title,
-        content,
-        date: new Date().toLocaleString()
-    });
-
-    localStorage.setItem("articles", JSON.stringify(articles));
-
-    document.getElementById("title").value = "";
-    document.getElementById("content").value = "";
-
-    loadArticles();
-}
-
-checkLogin();
-loadArticles();
+window.onload=load;
 </script>
 
 </body>
