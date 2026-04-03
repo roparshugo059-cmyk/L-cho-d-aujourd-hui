@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'écho d'aujourd'hui</title>
+
+<style>
+:root {
+    --bleu: #0b1f3a;
+    --vert: #2e8b57;
+    --fond: #eef2f3;
+}
+
+body {
+    margin: 0;
+    font-family: Georgia, serif;
+    background: var(--fond);
+}
+
+/* HEADER */
+header {
+    background: var(--bleu);
+    color: white;
+    text-align: center;
+    padding: 20px;
+    font-size: 26px;
+}
+
+/* LOGIN */
+.login-box {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+}
+
+.login-box input {
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+}
+
+.login-box button {
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    background: var(--vert);
+    color: white;
+    cursor: pointer;
+}
+
+/* LAYOUT */
+.container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+}
+
+/* EDITOR */
+.editor {
+    flex: 1;
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    display: none;
+}
+
+.editor.active {
+    display: block;
+}
+
+.editor input, .editor textarea {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+/* BUTTON */
+.publish {
+    width: 100%;
+    padding: 12px;
+    background: var(--vert);
+    color: white;
+    border: none;
+    border-radius: 10px;
+}
+
+/* JOURNAL */
+.journal {
+    flex: 2;
+}
+
+.article {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 20px;
+    border-left: 5px solid var(--bleu);
+}
+
+.article h2 {
+    color: var(--bleu);
+}
+
+.date {
+    color: var(--vert);
+    font-size: 12px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 800px) {
+    .container {
+        flex-direction: column;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<header>📰 L'écho d'aujourd'hui</header>
+
+<div class="login-box">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button onclick="login()">Connexion</button>
+    <button onclick="logout()">Déco</button>
+</div>
+
+<div class="container">
+
+    <div class="editor" id="editor">
+        <h2>✍️ Nouvel article</h2>
+        <input type="text" id="title" placeholder="Titre">
+        <textarea id="content" rows="8" placeholder="Ton article..."></textarea>
+        <button class="publish" onclick="publishArticle()">Publier</button>
+    </div>
+
+    <div class="journal" id="journal">
+        <h2>Articles</h2>
+    </div>
+
+</div>
+
+<script>
+const ADMIN_PASSWORD = "Balance2012";
+
+/* LOGIN */
+function login() {
+    const pwd = document.getElementById("password").value;
+
+    if (pwd === ADMIN_PASSWORD) {
+        localStorage.setItem("admin", "true");
+        document.getElementById("editor").classList.add("active");
+        alert("Connexion réussie");
+    } else {
+        alert("Mot de passe incorrect");
+    }
+}
+
+function logout() {
+    localStorage.removeItem("admin");
+    document.getElementById("editor").classList.remove("active");
+}
+
+/* CHECK LOGIN */
+function checkLogin() {
+    if (localStorage.getItem("admin") === "true") {
+        document.getElementById("editor").classList.add("active");
+    }
+}
+
+/* LOAD ARTICLES */
+function loadArticles() {
+    const journal = document.getElementById("journal");
+    const articles = JSON.parse(localStorage.getItem("articles")) || [];
+
+    journal.innerHTML = "<h2>Articles</h2>";
+
+    articles.forEach(a => {
+        const div = document.createElement("div");
+        div.className = "article";
+
+        div.innerHTML = `
+            <div class="date">${a.date}</div>
+            <h2>${a.title}</h2>
+            <p>${a.content}</p>
+        `;
+
+        journal.appendChild(div);
+    });
+}
+
+/* PUBLISH */
+function publishArticle() {
+    if (localStorage.getItem("admin") !== "true") {
+        alert("Accès refusé");
+        return;
+    }
+
+    const title = document.getElementById("title").value;
+    const content = document.getElementById("content").value;
+
+    if (!title || !content) {
+        alert("Champs manquants");
+        return;
+    }
+
+    const articles = JSON.parse(localStorage.getItem("articles")) || [];
+
+    articles.unshift({
+        title,
+        content,
+        date: new Date().toLocaleString()
+    });
+
+    localStorage.setItem("articles", JSON.stringify(articles));
+
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
+
+    loadArticles();
+}
+
+checkLogin();
+loadArticles();
+</script>
+
+</body>
+</html>
