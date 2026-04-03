@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -13,34 +14,34 @@
 
 <style>
 :root{--bleu:#0b1f3a;--vert:#2e7d32;--fond:#f5f7fa}
-body{margin:0;font-family:'Merriweather',serif;background:var(--fond);color:#111}
+body{margin:0;font-family:'Merriweather',serif;background:var(--fond)}
 header{text-align:center;padding:20px;background:white;border-radius:0 0 20px 20px}
 .logo{font-size:34px;font-weight:bold;color:var(--bleu)}
 
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:white}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:white;flex-wrap:wrap}
 .topbar input{padding:8px;border-radius:10px;border:1px solid #ccc;width:200px}
-.topbar button{padding:8px 12px;border:none;border-radius:10px;background:var(--bleu);color:white;cursor:pointer}
+.topbar button{padding:8px;border:none;border-radius:10px;background:var(--bleu);color:white;cursor:pointer}
 
-.nav{display:flex;justify-content:center;gap:25px;padding:10px;background:white;border-bottom:1px solid #ddd}
-.nav a{color:var(--bleu);text-decoration:none;font-weight:600;cursor:pointer}
-.nav a:hover{color:var(--vert)}
+.nav{display:flex;justify-content:center;gap:20px;padding:10px;background:white;border-bottom:1px solid #ddd;flex-wrap:wrap}
+.nav a{cursor:pointer;font-weight:600;color:var(--bleu)}
 
 .container{max-width:800px;margin:auto;padding:20px}
-.article{margin-bottom:40px;background:white;padding:20px;border-radius:20px;box-shadow:0 5px 15px rgba(0,0,0,0.05)}
-.article img{width:100%;border-radius:15px;margin:15px 0}
-.meta{color:#666;font-size:12px;margin-bottom:15px}
-.content{font-size:18px;line-height:1.8}
+.article{background:white;padding:20px;border-radius:20px;margin-bottom:30px;box-shadow:0 5px 15px rgba(0,0,0,0.05)}
+.article img{width:100%;border-radius:15px;margin-top:10px}
+.meta{color:#666;font-size:12px;margin-bottom:10px}
+.content{font-size:18px;line-height:1.6}
 
-.editor-btn{position:fixed;bottom:20px;right:20px;background:var(--bleu);color:white;border:none;padding:15px;border-radius:50%;cursor:pointer;display:none}
+.editor-btn{position:fixed;bottom:20px;right:20px;background:var(--bleu);color:white;border:none;padding:15px;border-radius:50%;display:none;cursor:pointer}
 
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center}
 .modal.active{display:flex}
 .editor{background:white;padding:20px;border-radius:20px;width:90%;max-width:600px}
-input,textarea{width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:1px solid #ccc}
+input,textarea{width:100%;padding:10px;margin-bottom:10px;border-radius:10px;border:1px solid #ccc}
 </style>
 </head>
 
 <body>
+
 <header>
 <div class="logo">L'ÉCHO D'AUJOURD'HUI</div>
 </header>
@@ -61,7 +62,7 @@ input,textarea{width:100%;padding:12px;margin-bottom:10px;border-radius:10px;bor
 <a onclick="filter('sport')">Sport</a>
 </div>
 
-<div class="container" id="articles"></div>
+<div class="container" id="articles">Chargement...</div>
 
 <button class="editor-btn" id="editBtn" onclick="openEditor()">✍️</button>
 
@@ -70,7 +71,7 @@ input,textarea{width:100%;padding:12px;margin-bottom:10px;border-radius:10px;bor
 <h2>Nouvel article</h2>
 <input id="title" placeholder="Titre">
 <input id="image" placeholder="URL image">
-<input id="category" placeholder="Catégorie (politique, eco...)">
+<input id="category" placeholder="Catégorie">
 <textarea id="content" placeholder="Contenu"></textarea>
 <button onclick="saveArticle()">Publier</button>
 <button onclick="closeEditor()">Fermer</button>
@@ -78,91 +79,141 @@ input,textarea{width:100%;padding:12px;margin-bottom:10px;border-radius:10px;bor
 </div>
 
 <script>
-const firebaseConfig = {apiKey:"YOUR_KEY",authDomain:"YOUR_DOMAIN",projectId:"YOUR_PROJECT"};
+const firebaseConfig = {
+  apiKey: "AIzaSyA3A7zebX0HSQEpKTYOXNGBid1SiaRiBEI",
+  authDomain: "echo-aujourdhui.firebaseapp.com",
+  projectId: "echo-aujourdhui",
+  storageBucket: "echo-aujourdhui.firebasestorage.app",
+  messagingSenderId: "806817807595",
+  appId: "1:806817807595:web:7a678d6bec26c718ba92ae",
+  measurementId: "G-CLSH7LPH1F"
+};
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
+const ADMIN_EMAIL = "hugoropars05@outlook.fr";
+
+const modal = document.getElementById('modal');
+const articlesDiv = document.getElementById('articles');
+const editBtn = document.getElementById('editBtn');
+
 let allArticles = [];
-let currentFilter = 'all';
 
 function login(){
 const email = prompt("Email");
 const password = prompt("Mot de passe");
+
 auth.signInWithEmailAndPassword(email,password)
 .then(()=>alert("Connecté"))
-.catch(()=>alert("Erreur"));
+.catch(()=>alert("Erreur de connexion"));
 }
 
-function logout(){auth.signOut();}
+function logout(){
+auth.signOut();
+}
 
-function openEditor(){if(auth.currentUser){modal.classList.add('active');}}
-function closeEditor(){modal.classList.remove('active');}
+function openEditor(){
+if(auth.currentUser && auth.currentUser.email === ADMIN_EMAIL){
+modal.classList.add('active');
+}
+}
+
+function closeEditor(){
+modal.classList.remove('active');
+}
+
+function escapeHTML(text){
+return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
 
 function formatText(text){
-let html=text
-.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
-.replace(/\*(.*?)\*/g,'<i>$1</i>')
-.replace(/## (.*?)\n/g,'<h2>$1</h2>');
-return html.split('\n\n').map(p=>`<p>${p}</p>`).join('');
+text = escapeHTML(text);
+return text.replace(/\n/g,'<br>');
 }
 
 async function saveArticle(){
+if(!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL){
+alert("Non autorisé");
+return;
+}
+
 await db.collection('articles').add({
-title:title.value,
-content:content.value,
-image:image.value,
-category:category.value.toLowerCase(),
-date:new Date()
+title: document.getElementById('title').value,
+content: document.getElementById('content').value,
+image: document.getElementById('image').value,
+category: document.getElementById('category').value.toLowerCase(),
+date: new Date()
 });
+
 closeEditor();
 }
 
 function display(list){
-articles.innerHTML='';
-if(list.length===0){articles.innerHTML='<p>Aucun article</p>';return;}
+articlesDiv.innerHTML='';
+
+if(list.length === 0){
+articlesDiv.innerHTML = "<p>Aucun article</p>";
+return;
+}
 
 list.forEach(a=>{
 let div=document.createElement('div');
 div.className='article';
-let date=a.date?.toDate ? a.date.toDate().toLocaleString() : '';
 
-div.innerHTML=`
-<h1>${a.title}</h1>
+let date = a.date?.toDate ? a.date.toDate().toLocaleString() : '';
+
+div.innerHTML = `
+<h2>${a.title}</h2>
 <div class="meta">${date}</div>
 ${a.image ? `<img src="${a.image}">` : ''}
-<div class="content">${formatText(a.content)}</div>`;
+<div class="content">${formatText(a.content)}</div>
+`;
 
-articles.appendChild(div);
+articlesDiv.appendChild(div);
 });
 }
 
 function filter(cat){
-currentFilter=cat;
-if(cat==='all') display(allArticles);
-else display(allArticles.filter(a=>a.category===cat));
+if(cat === 'all') display(allArticles);
+else display(allArticles.filter(a=>a.category === cat));
 }
 
 function searchArticles(){
-let q=search.value.toLowerCase();
-let filtered=allArticles.filter(a=>a.title.toLowerCase().includes(q));
+let q = document.getElementById('search').value.toLowerCase();
+
+let filtered = allArticles.filter(a =>
+a.title.toLowerCase().includes(q) ||
+a.content.toLowerCase().includes(q)
+);
+
 display(filtered);
 }
 
 function load(){
-db.collection('articles').orderBy('date','desc').onSnapshot(s=>{
-allArticles=[];
-s.forEach(doc=>allArticles.push(doc.data()));
+db.collection('articles').orderBy('date','desc')
+.onSnapshot(snapshot=>{
+allArticles = [];
+snapshot.forEach(doc=>{
+allArticles.push({id: doc.id, ...doc.data()});
+});
 display(allArticles);
 });
 }
 
 auth.onAuthStateChanged(user=>{
-editBtn.style.display = user ? 'block' : 'none';
+if(user && user.email === ADMIN_EMAIL){
+editBtn.style.display = 'block';
+}else{
+editBtn.style.display = 'none';
+}
 });
 
-window.onload=load;
+window.onload = load;
 </script>
 
 </body>
 </html>
+```
+
